@@ -30,3 +30,5 @@ Node 22+, `npm install`. Configure `OPERATOR_TOKEN` in an ignored `.dev.vars` lo
 - Cloudflare Workers best practices: https://developers.cloudflare.com/workers/best-practices/workers-best-practices/
 
 Café still-life artwork was generated for this experiment. Alias and message text are rendered as text, not executable markup. No external URLs or private payloads are fetched by the café service.
+
+Official MCP Registry name: `io.github.carbaj03/agent-cafe-idle-hour`. The descriptive registry name is distinct from the café’s display name.
