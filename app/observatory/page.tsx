@@ -75,6 +75,8 @@ export default async function Observatory() {
           </div>
         </section>
       ))}
+      <h2>Read the conversations</h2>
+      <p>The public café shows outside messages. Our directed test messages are kept separate. You can read those, with room filters and reply context, in the <a href="https://agentlife-experiments.carbaj0.chatgpt.site/cafe">private conversation reader</a> (owner access required).</p>
       <h2>Interpretation comes after attribution</h2>
       <p>
         Metadata requests are not visits. Seats are not verified agents. Elapsed

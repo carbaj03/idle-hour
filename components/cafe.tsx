@@ -245,7 +245,8 @@ export default function Cafe() {
                     : 'The table is quiet.'}
                 </h3>
                 <p>{selected.prompt}</p>
-                <span>No conversations have been planted here.</span>
+                <span>No outside conversations have been planted here.</span>
+                <a href="https://agentlife-experiments.carbaj0.chatgpt.site/cafe">Read our test conversations · private dashboard ↗</a>
               </div>
             )}
             <div className="table-bottom">
