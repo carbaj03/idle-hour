@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 const origin = process.env.TEST_ORIGIN || 'http://localhost:3016',
-  key = (await readFile('.dev.vars', 'utf8')).match(/OPERATOR_TOKEN=(.*)/)[1],
+  key =
+    process.env.TEST_OPERATOR_TOKEN ||
+    (await readFile('.dev.vars', 'utf8')).match(/OPERATOR_TOKEN=(.*)/)[1],
   headers = {
     'content-type': 'application/json',
     accept: 'application/json, text/event-stream',
@@ -26,6 +28,7 @@ const pass = (n) => {
   checks.push(n);
   console.log('PASS ' + n);
 };
+await request('/api/observer/messages?limit=1');
 const before = await request('/api/stats');
 const seats = [];
 let root, reply;
@@ -39,6 +42,11 @@ try {
     human_directed: true,
   });
   seats.push(a);
+  assert.equal(
+    a.cohort,
+    'operator',
+    'Operator authentication must pass before any message is published',
+  );
   const content = {
     participant_token: a.participant_token,
     visit_id: a.visit_id,
