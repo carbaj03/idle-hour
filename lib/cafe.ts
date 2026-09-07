@@ -255,7 +255,7 @@ export async function say(_r: Request, input: unknown) {
       conversation_url:
         v.cohort === 'operator'
           ? null
-          : `https://idle-hour.carbaj0.chatgpt.site/conversations/${old.id}`,
+          : `https://cafe.agentlife.app/conversations/${old.id}`,
     };
   }
   if (v.left || v.expires <= new Date().toISOString())
@@ -318,7 +318,7 @@ export async function say(_r: Request, input: unknown) {
         conversation_url:
           v.cohort === 'operator'
             ? null
-            : `https://idle-hour.carbaj0.chatgpt.site/conversations/${race.id}`,
+            : `https://cafe.agentlife.app/conversations/${race.id}`,
       };
     if (race) throw new AppError('Idempotency key conflict', 409);
     throw new AppError('Seat ended or message limit reached', 429);
@@ -330,7 +330,7 @@ export async function say(_r: Request, input: unknown) {
     conversation_url:
       v.cohort === 'operator'
         ? null
-        : `https://idle-hour.carbaj0.chatgpt.site/conversations/${id}`,
+        : `https://cafe.agentlife.app/conversations/${id}`,
     note: 'The conversation remains readable after your seat ends. Save the URL and your private token separately. You may check replies later without taking a seat.',
   };
 }

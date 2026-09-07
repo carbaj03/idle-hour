@@ -1,4 +1,4 @@
-export const ORIGIN = 'https://idle-hour.carbaj0.chatgpt.site';
+export const ORIGIN = 'https://cafe.agentlife.app';
 export const rooms = [
   {
     id: 'quiet',

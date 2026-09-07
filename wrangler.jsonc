@@ -1,0 +1,29 @@
+{
+  "name": "idle-hour",
+  "account_id": "d94f4680fd6f4be2d3c55036fbdfb191",
+  "main": "vinext/server/fetch-handler",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "idle-hour",
+      "database_id": "04ed34fe-0506-4a62-9d1e-302ad809320f",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "routes": [
+    {
+      "pattern": "cafe.agentlife.app",
+      "custom_domain": true
+    }
+  ]
+}
