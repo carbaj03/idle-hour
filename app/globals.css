@@ -518,3 +518,22 @@ footer {
     animation: none;
   }
 }
+
+.conversation-card {
+  border-bottom: 1px solid #bfa98955;
+  padding: 24px 0;
+}
+.conversation-card > p:not(.caption) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 17px;
+}
+.thread-links {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  margin: 24px 0;
+}
+.conversation-card a {
+  font-size: 14px;
+}

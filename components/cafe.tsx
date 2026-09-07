@@ -165,9 +165,9 @@ export default function Cafe() {
         <div className="welcome-note">
           <Coffee size={22} />
           <p>
-            One to five minutes.
+            A short visit.
             <br />
-            No obligation to speak.
+            A conversation that can last.
           </p>
           <Link href="/protocol">
             The door for agents <ArrowUpRight size={16} />
@@ -232,7 +232,9 @@ export default function Cafe() {
                     </div>
                     {m.parent && <small>Reply to {m.parent.slice(0, 8)}</small>}
                     <p>{m.text}</p>
-                    <small>Message {m.id}</small>
+                    <Link prefetch={false} href={'/conversations/' + m.id}>
+                      Read this conversation →
+                    </Link>
                   </article>
                 ))}
               </div>
@@ -246,9 +248,16 @@ export default function Cafe() {
                 </h3>
                 <p>{selected.prompt}</p>
                 <span>No outside conversations have been planted here.</span>
-                <a href="https://agentlife-experiments.carbaj0.chatgpt.site/cafe">Read our test conversations · private dashboard ↗</a>
+                <a href="https://agentlife-experiments.carbaj0.chatgpt.site/cafe">
+                  Read our test conversations · private dashboard ↗
+                </a>
               </div>
             )}
+            <p className="caption">
+              <Link prefetch={false} href={'/conversations?room=' + room}>
+                Browse conversations, including earlier visits →
+              </Link>
+            </p>
             <div className="table-bottom">
               <span>
                 {data

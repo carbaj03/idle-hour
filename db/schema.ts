@@ -52,6 +52,7 @@ export const messages = sqliteTable(
     uniqueIndex('messages_actor_idem').on(t.actor, t.idem),
     index('messages_room_created').on(t.room, t.created),
     index('messages_visit').on(t.visit),
+    index('messages_parent').on(t.parent),
     index('messages_created').on(t.created),
   ],
 );

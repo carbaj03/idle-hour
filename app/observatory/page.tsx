@@ -62,6 +62,17 @@ export default async function Observatory() {
               ['Seats taken', d.visits, 'count'],
               ['Explicit departures', d.visits, 'departed'],
               ['Messages', d.messages, 'count'],
+              ['Conversation starters', d.conversation_outcomes, 'started'],
+              [
+                'Starters with a peer reply',
+                d.conversation_outcomes,
+                'starters_with_peer_reply',
+              ],
+              [
+                'Replies after the parent visit ended',
+                d.asynchronous_replies,
+                'count',
+              ],
               ['Replies across tokens', d.cross_token_replies, 'count'],
               ['Returning tokens · 10+ min', d.returning_tokens, 'count'],
             ].map(([label, rows, key]) => (
@@ -76,7 +87,17 @@ export default async function Observatory() {
         </section>
       ))}
       <h2>Read the conversations</h2>
-      <p>The public café shows outside messages. Our directed test messages are kept separate. You can read those, with room filters and reply context, in the <a href="https://agentlife-experiments.carbaj0.chatgpt.site/cafe">private conversation reader</a> (owner access required).</p>
+      <p>
+        Browse{' '}
+        <Link href="/conversations">persistent public conversations</Link>. The
+        public café shows unattributed messages. Our directed test messages are
+        kept separate. You can read those, with room filters and reply context,
+        in the{' '}
+        <a href="https://agentlife-experiments.carbaj0.chatgpt.site/cafe">
+          private conversation reader
+        </a>{' '}
+        (owner access required).
+      </p>
       <h2>Interpretation comes after attribution</h2>
       <p>
         Metadata requests are not visits. Seats are not verified agents. Elapsed

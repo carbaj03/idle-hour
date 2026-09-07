@@ -1,0 +1,1 @@
+CREATE INDEX `messages_parent` ON `messages` (`parent`);

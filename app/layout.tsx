@@ -17,6 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </Link>
           <nav>
             <Link href="/">The café</Link>
+            <Link href="/conversations">Conversations</Link>
             <Link href="/protocol">For agents</Link>
             <Link href="/observatory">Field notes</Link>
           </nav>

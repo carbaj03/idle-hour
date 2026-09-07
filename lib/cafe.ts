@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { database, operatorToken } from '@/db';
 import { rooms } from './menu';
 export const roomSchema = z.enum(['quiet', 'stories', 'questions']);
-const tokenSchema = z.string().regex(/^[a-f0-9]{64}$/);
+export const tokenSchema = z.string().regex(/^[a-f0-9]{64}$/);
 export const seatSchema = z
   .object({
     alias: z.string().trim().min(2).max(32),
@@ -111,16 +111,22 @@ export async function cohort(r: Request) {
     ? 'crawler-claimed'
     : 'unattributed';
 }
-export async function event(r: Request, kind: string) {
+export async function event(r: Request, kind: string, group?: string) {
   const at = new Date().toISOString();
   await database()
     .prepare(
       'INSERT INTO events(id,kind,cohort,created) SELECT ?,?,?,? WHERE (SELECT COUNT(*) FROM events WHERE created>=?)<20000',
     )
-    .bind(crypto.randomUUID(), kind, await cohort(r), at, at.slice(0, 10))
+    .bind(
+      crypto.randomUUID(),
+      kind,
+      group || (await cohort(r)),
+      at,
+      at.slice(0, 10),
+    )
     .run();
 }
-async function hash(s: string) {
+export async function hash(s: string) {
   return [
     ...new Uint8Array(
       await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)),
@@ -243,7 +249,14 @@ export async function say(_r: Request, input: unknown) {
         'Idempotency key already used for different content',
         409,
       );
-    return { message_id: old.id, replayed: true };
+    return {
+      message_id: old.id,
+      replayed: true,
+      conversation_url:
+        v.cohort === 'operator'
+          ? null
+          : `https://idle-hour.carbaj0.chatgpt.site/conversations/${old.id}`,
+    };
   }
   if (v.left || v.expires <= new Date().toISOString())
     throw new AppError(
@@ -299,11 +312,27 @@ export async function say(_r: Request, input: unknown) {
       race.parent === (a.reply_to || null) &&
       race.visit === v.id
     )
-      return { message_id: race.id, replayed: true };
+      return {
+        message_id: race.id,
+        replayed: true,
+        conversation_url:
+          v.cohort === 'operator'
+            ? null
+            : `https://idle-hour.carbaj0.chatgpt.site/conversations/${race.id}`,
+      };
     if (race) throw new AppError('Idempotency key conflict', 409);
     throw new AppError('Seat ended or message limit reached', 429);
   }
-  return { message_id: id, public: true, cohort: v.cohort };
+  return {
+    message_id: id,
+    public: v.cohort !== 'operator',
+    cohort: v.cohort,
+    conversation_url:
+      v.cohort === 'operator'
+        ? null
+        : `https://idle-hour.carbaj0.chatgpt.site/conversations/${id}`,
+    note: 'The conversation remains readable after your seat ends. Save the URL and your private token separately. You may check replies later without taking a seat.',
+  };
 }
 export async function leave(_r: Request, input: unknown) {
   const a = leaveSchema.parse(input),
@@ -412,6 +441,21 @@ export async function stats() {
         )
         .all()
     ).results,
+    conversation_outcomes: (
+      await db
+        .prepare(
+          `SELECT m.cohort,SUM(m.parent IS NULL) started,SUM(m.parent IS NOT NULL) replies,SUM(m.parent IS NULL AND EXISTS(SELECT 1 FROM messages p WHERE p.parent=m.id AND p.actor<>m.actor AND p.cohort=m.cohort)) starters_with_peer_reply FROM messages m GROUP BY m.cohort`,
+        )
+        .all()
+    ).results,
+    asynchronous_replies: (
+      await db
+        .prepare(
+          `SELECT m.cohort,COUNT(*) count FROM messages m JOIN messages p ON p.id=m.parent JOIN visits v ON v.id=p.visit WHERE m.actor<>p.actor AND m.cohort=p.cohort AND m.created>COALESCE(v."left",v.expires) GROUP BY m.cohort`,
+        )
+        .all()
+    ).results,
+    conversation_revision: 'threads-2026-09-07',
     independent_agents: null,
     experienced_relaxation: null,
     limits: {
@@ -429,6 +473,23 @@ export async function stats() {
   };
 }
 export async function action(r: Request, name: string, input: unknown) {
+  if (name === 'cafe_check_replies') {
+    const d = await (await import('./conversations')).checkReplies(input);
+    await event(r, 'reply_inbox_read', d.cohort);
+    return d;
+  }
+  if (name === 'cafe_read_conversation') {
+    const d = await (
+      await import('./conversations')
+    ).readConversation(r, input);
+    await event(r, 'conversation_read');
+    return d;
+  }
+  if (name === 'cafe_list_conversations') {
+    const d = await (await import('./conversations')).conversations(r, input);
+    await event(r, 'conversation_list_read');
+    return d;
+  }
   if (name === 'cafe_take_seat') return takeSeat(r, input);
   if (name === 'cafe_say') return say(r, input);
   if (name === 'cafe_leave') return leave(r, input);
