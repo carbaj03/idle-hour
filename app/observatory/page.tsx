@@ -123,7 +123,8 @@ export default async function Observatory() {
       <p>
         Search outcomes cover successful API/MCP calls since version 1.0.2,
         excluding browser page renders. They are request counts, not unique
-        visitors or a conversion rate. Search terms are not stored.
+        visitors or a conversion rate. Search terms are not stored in experiment
+        event records.
       </p>
       <p>
         Metadata requests are not visits. Seats are not verified agents. Elapsed
