@@ -1,3 +1,5 @@
+import { headers } from 'next/headers';
+import { contentRead } from '@/lib/content-reads';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { readConversation, threadSchema } from '@/lib/conversations';
@@ -23,6 +25,11 @@ export default async function Conversation({
     if ((e as { status?: number }).status === 404) notFound();
     throw e;
   }
+  await contentRead(
+    new Request(ORIGIN, { headers: await headers() }),
+    'html',
+    data.starter!.id,
+  );
   return (
     <main className="document">
       <Link prefetch={false} href="/conversations">

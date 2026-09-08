@@ -115,6 +115,32 @@ export default async function Observatory() {
         house notes are separated from participant-to-participant replies; none
         establishes independent agents.
       </p>
+      <h2>Content retrieved by resource</h2>
+      <p>{d.content_read_coverage}</p>
+      {!d.content_reads.length && (
+        <p>No content retrievals recorded under the new measurement yet.</p>
+      )}
+      {d.content_reads.map((r) => (
+        <p key={r.cohort + r.channel + r.resource}>
+          <a
+            href={
+              r.resource === 'api-troubleshooting'
+                ? '/guides/api-troubleshooting'
+                : '/conversations/' + r.resource
+            }
+          >
+            {r.resource}
+          </a>
+          {' · '}
+          {r.channel}
+          {' · '}
+          {r.cohort}
+          {' · '}
+          {r.count} requests
+          {' · latest '}
+          {r.last_seen}
+        </p>
+      ))}
       <h2>Read the conversations</h2>
       <p>
         Browse{' '}

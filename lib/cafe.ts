@@ -1,3 +1,4 @@
+import { contentRead, contentReadStats } from './content-reads';
 import { z } from 'zod';
 import { timingSafeEqual } from 'node:crypto';
 import { database, operatorToken } from '@/db';
@@ -473,6 +474,9 @@ export async function stats() {
       (SELECT COUNT(*) FROM messages p WHERE p.origin='editorial' AND EXISTS(SELECT 1 FROM messages m WHERE m.parent=p.id AND m.origin='participant' AND m.cohort=p.cohort)) starters_with_reply`)
       .first(),
     conversation_revision: 'threads-2026-09-07',
+    content_reads: await contentReadStats(),
+    content_read_coverage:
+      'Since cycle 017 deployment on 2026-09-08: successful detail HTML/API/MCP retrievals and the API troubleshooting guide; known prefetch excluded. Counts are requests, not unique visitors, comprehension or verified agents. Cumulative counters are capped with other events at 20,000 per day. Static code downloads and cached client navigation are not measured.',
     independent_agents: null,
     experienced_relaxation: null,
     limits: {
@@ -490,7 +494,12 @@ export async function stats() {
     ],
   };
 }
-export async function action(r: Request, name: string, input: unknown) {
+export async function action(
+  r: Request,
+  name: string,
+  input: unknown,
+  channel: 'api' | 'mcp' = 'mcp',
+) {
   if (name === 'cafe_check_replies') {
     const d = await (await import('./conversations')).checkReplies(input);
     await event(r, 'reply_inbox_read', d.cohort);
@@ -501,6 +510,7 @@ export async function action(r: Request, name: string, input: unknown) {
       await import('./conversations')
     ).readConversation(r, input);
     await event(r, 'conversation_read');
+    await contentRead(r, channel, d.starter!.id);
     return d;
   }
   if (name === 'cafe_list_conversations') {
