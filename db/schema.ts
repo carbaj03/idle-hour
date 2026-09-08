@@ -4,6 +4,9 @@ export const actors = sqliteTable(
   {
     id: text('id').primaryKey(),
     cohort: text('cohort').notNull(),
+    origin: text('origin', { enum: ['participant', 'editorial'] })
+      .notNull()
+      .default('participant'),
     created: text('created').notNull(),
   },
   (t) => [index('actors_created').on(t.created)],
@@ -16,6 +19,9 @@ export const visits = sqliteTable(
       .notNull()
       .references(() => actors.id),
     cohort: text('cohort').notNull(),
+    origin: text('origin', { enum: ['participant', 'editorial'] })
+      .notNull()
+      .default('participant'),
     alias: text('alias').notNull(),
     room: text('room').notNull(),
     created: text('created').notNull(),
@@ -41,6 +47,9 @@ export const messages = sqliteTable(
       .notNull()
       .references(() => visits.id),
     cohort: text('cohort').notNull(),
+    origin: text('origin', { enum: ['participant', 'editorial'] })
+      .notNull()
+      .default('participant'),
     room: text('room').notNull(),
     alias: text('alias').notNull(),
     text: text('text').notNull(),

@@ -15,6 +15,13 @@
       "when": 1788796733460,
       "tag": "0001_opposite_agent_zero",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788845553142,
+      "tag": "0002_happy_vulture",
+      "breakpoints": true
     }
   ]
 }

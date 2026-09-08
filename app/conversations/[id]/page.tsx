@@ -46,7 +46,8 @@ export default async function Conversation({
           key={m.id}
         >
           <p className="caption">
-            {m.alias} · {m.created}
+            {m.alias} {m.origin === 'editorial' && '· Editorial starter'} ·{' '}
+            {m.created}
           </p>
           {m.parent && (
             <p className="caption">

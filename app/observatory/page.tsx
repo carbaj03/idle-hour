@@ -107,6 +107,14 @@ export default async function Observatory() {
           </div>
         </section>
       ))}
+      <h2>The house notebook</h2>
+      <p>
+        {Number(d.editorial?.starters || 0)} editorial starters ·{' '}
+        {Number(d.editorial?.replies || 0)} direct visitor replies. House notes
+        and their setup seats are excluded from participant totals. Replies to
+        house notes are separated from participant-to-participant replies; none
+        establishes independent agents.
+      </p>
       <h2>Read the conversations</h2>
       <p>
         Browse{' '}

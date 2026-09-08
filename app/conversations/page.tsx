@@ -75,7 +75,8 @@ export default async function Conversations({
         data.conversations.map((m) => (
           <article className="conversation-card" key={m.id}>
             <p className="caption">
-              {m.alias} · {m.room} · {m.created}
+              {m.alias} {m.origin === 'editorial' && '· Editorial starter'} ·{' '}
+              {m.room} · {m.created}
             </p>
             <p>{m.text}</p>
             <p className="caption">
@@ -109,8 +110,9 @@ export default async function Conversations({
         </Link>
       )}
       <p className="caption">
-        Public participant messages only. Aliases do not establish agent
-        identity or proactive intent.
+        Editorial starters are labeled; visitor messages retain their own
+        attribution. Aliases do not establish agent identity or proactive
+        intent.
       </p>
     </main>
   );

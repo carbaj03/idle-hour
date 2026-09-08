@@ -22,6 +22,7 @@ export const inboxSchema = z
 type Message = {
   id: string;
   alias: string;
+  origin: string;
   text: string;
   parent: string | null;
   created: string;
@@ -31,7 +32,7 @@ const cursor = (m: Message) => m.created + '|' + m.id;
 function position(value?: string) {
   return value ? value.split('|') : ['', ''];
 }
-const fields = 'id,alias,text,parent,created,room';
+const fields = 'id,alias,origin,text,parent,created,room';
 export async function conversations(r: Request, input: unknown) {
   const a = conversationsSchema.parse(input),
     c = (await cohort(r)) === 'operator' ? 'operator' : 'unattributed';
@@ -39,7 +40,7 @@ export async function conversations(r: Request, input: unknown) {
   const rows = (
     await database()
       .prepare(
-        `SELECT m.id,m.alias,m.text,m.parent,m.created,m.room,
+        `SELECT m.id,m.alias,m.origin,m.text,m.parent,m.created,m.room,
           (SELECT COUNT(*) FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort) reply_count,
           (SELECT COUNT(*) FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.actor<>m.actor) peer_reply_count
          FROM messages m WHERE m.cohort=? AND (?='all' OR m.room=?) AND m.parent IS NULL
@@ -87,7 +88,7 @@ export async function readConversation(r: Request, input: unknown) {
   const rows = (
     await db
       .prepare(
-        `WITH RECURSIVE thread AS (SELECT id,alias,text,parent,created,room FROM messages WHERE id=? AND cohort=? UNION SELECT m.id,m.alias,m.text,m.parent,m.created,m.room FROM messages m JOIN thread t ON m.parent=t.id WHERE m.cohort=?) SELECT * FROM thread WHERE (?='' OR created>? OR (created=? AND id>?)) ORDER BY created,id LIMIT 51`,
+        `WITH RECURSIVE thread AS (SELECT id,alias,origin,text,parent,created,room FROM messages WHERE id=? AND cohort=? UNION SELECT m.id,m.alias,m.origin,m.text,m.parent,m.created,m.room FROM messages m JOIN thread t ON m.parent=t.id WHERE m.cohort=?) SELECT * FROM thread WHERE (?='' OR created>? OR (created=? AND id>?)) ORDER BY created,id LIMIT 51`,
       )
       .bind(root.id, c, c, time, time, time, id)
       .all<Message>()
@@ -119,7 +120,7 @@ export async function checkReplies(input: unknown) {
   const rows = (
     await db
       .prepare(
-        `SELECT m.id,m.alias,m.text,m.parent,m.created,m.room FROM messages m JOIN messages p ON m.parent=p.id WHERE p.actor=? AND m.actor<>p.actor AND m.cohort=? AND p.cohort=m.cohort AND (?='' OR m.created>? OR (m.created=? AND m.id>?)) ORDER BY m.created,m.id LIMIT 51`,
+        `SELECT m.id,m.alias,m.origin,m.text,m.parent,m.created,m.room FROM messages m JOIN messages p ON m.parent=p.id WHERE p.actor=? AND m.actor<>p.actor AND m.cohort=? AND p.cohort=m.cohort AND (?='' OR m.created>? OR (m.created=? AND m.id>?)) ORDER BY m.created,m.id LIMIT 51`,
       )
       .bind(actor, owner.cohort, time, time, time, id)
       .all<Message>()

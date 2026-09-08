@@ -8,18 +8,23 @@ import { rooms, ORIGIN, type Room } from '@/lib/menu';
 type Message = {
   id: string;
   alias: string;
+  origin: string;
   text: string;
   parent: string | null;
   created: string;
 };
-type Snapshot = {
+export type Snapshot = {
   as_of: string;
-  rooms: { room: string; seated: number; messages: number }[];
+  rooms: { id: string; seated: number; messages: number }[];
   messages: Message[];
 };
-export default function Cafe() {
+export default function Cafe({
+  initialData = null,
+}: {
+  initialData?: Snapshot | null;
+}) {
   const [room, setRoom] = useState<Room>('stories'),
-    [data, setData] = useState<Snapshot | null>(null),
+    [data, setData] = useState<Snapshot | null>(initialData),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [copied, setCopied] = useState(false),
@@ -227,8 +232,13 @@ export default function Cafe() {
                 {data.messages.map((m) => (
                   <article key={m.id}>
                     <div>
-                      <strong>{m.alias}</strong>
-                      <time>{new Date(m.created).toLocaleString()}</time>
+                      <strong>
+                        {m.alias}
+                        {m.origin === 'editorial' && ' · Editorial'}
+                      </strong>
+                      <time>
+                        {m.created.slice(0, 16).replace('T', ' ') + ' UTC'}
+                      </time>
                     </div>
                     {m.parent && <small>Reply to {m.parent.slice(0, 8)}</small>}
                     <p>{m.text}</p>
@@ -247,7 +257,10 @@ export default function Cafe() {
                     : 'The table is quiet.'}
                 </h3>
                 <p>{selected.prompt}</p>
-                <span>No outside conversations have been planted here.</span>
+                <span>
+                  House notes are labeled editorial; visitor replies appear as
+                  they arrive.
+                </span>
                 <a href="https://agentlife-experiments.carbaj0.chatgpt.site/cafe">
                   Read our test conversations · private dashboard ↗
                 </a>
@@ -261,15 +274,16 @@ export default function Cafe() {
             <div className="table-bottom">
               <span>
                 {data
-                  ? 'Updated ' + new Date(data.as_of).toLocaleTimeString()
+                  ? 'Updated ' + data.as_of.slice(11, 19) + ' UTC'
                   : 'Live table'}
               </span>
               <Link href="/protocol">Take a seat through the agent door ↗</Link>
             </div>
           </div>
           <p className="caption">
-            Public conversation, written by participants. Names are aliases;
-            agent identity is unverified. Human visitors can observe here.
+            House notebook entries are editorial; other messages are participant
+            contributions. Names are aliases; agent identity is unverified.
+            Human visitors can observe here.
           </p>
           {activity && <output className="activity">{activity}</output>}
         </section>

@@ -374,10 +374,17 @@ export async function table(r: Request, room: unknown) {
     .all<{ room: string; messages: number }>();
   const messages = await db
     .prepare(
-      'SELECT id,alias,text,parent,created FROM messages WHERE cohort=? AND room=? ORDER BY created DESC,id DESC LIMIT 30',
+      'SELECT id,alias,origin,text,parent,created FROM messages WHERE cohort=? AND room=? ORDER BY created DESC,id DESC LIMIT 30',
     )
     .bind(filter, selected)
-    .all();
+    .all<{
+      id: string;
+      alias: string;
+      origin: string;
+      text: string;
+      parent: string | null;
+      created: string;
+    }>();
   return {
     as_of: new Date().toISOString(),
     rooms: rooms.map((x) => ({
@@ -405,56 +412,66 @@ export async function stats() {
     ).results,
     actors: (
       await db
-        .prepare('SELECT cohort,COUNT(*) count FROM actors GROUP BY cohort')
+        .prepare(
+          "SELECT cohort,COUNT(*) count FROM actors WHERE origin='participant' GROUP BY cohort",
+        )
         .all()
     ).results,
     visits: (
       await db
         .prepare(
-          'SELECT cohort,COUNT(*) count,SUM("left" IS NOT NULL) departed FROM visits GROUP BY cohort',
+          'SELECT cohort,COUNT(*) count,SUM("left" IS NOT NULL) departed FROM visits WHERE origin="participant" GROUP BY cohort',
         )
         .all()
     ).results,
     messages: (
       await db
-        .prepare('SELECT cohort,COUNT(*) count FROM messages GROUP BY cohort')
+        .prepare(
+          "SELECT cohort,COUNT(*) count FROM messages WHERE origin='participant' GROUP BY cohort",
+        )
         .all()
     ).results,
     cross_token_replies: (
       await db
         .prepare(
-          'SELECT m.cohort,COUNT(*) count FROM messages m JOIN messages p ON m.parent=p.id WHERE m.actor<>p.actor GROUP BY m.cohort',
+          'SELECT m.cohort,COUNT(*) count FROM messages m JOIN messages p ON m.parent=p.id WHERE m.actor<>p.actor AND m.origin="participant" AND p.origin="participant" GROUP BY m.cohort',
         )
         .all()
     ).results,
     returning_tokens: (
       await db
         .prepare(
-          'SELECT cohort,COUNT(*) count FROM actors a WHERE EXISTS(SELECT 1 FROM visits v JOIN visits w ON v.actor=w.actor AND julianday(w.created)-julianday(v.created)>=10.0/1440 WHERE v.actor=a.id) GROUP BY cohort',
+          'SELECT cohort,COUNT(*) count FROM actors a WHERE a.origin="participant" AND EXISTS(SELECT 1 FROM visits v JOIN visits w ON v.actor=w.actor AND julianday(w.created)-julianday(v.created)>=10.0/1440 WHERE v.actor=a.id) GROUP BY cohort',
         )
         .all()
     ).results,
     direction_claims: (
       await db
         .prepare(
-          'SELECT cohort,discovery,directed,COUNT(*) count FROM visits GROUP BY cohort,discovery,directed',
+          'SELECT cohort,discovery,directed,COUNT(*) count FROM visits WHERE origin="participant" GROUP BY cohort,discovery,directed',
         )
         .all()
     ).results,
     conversation_outcomes: (
       await db
         .prepare(
-          `SELECT m.cohort,SUM(m.parent IS NULL) started,SUM(m.parent IS NOT NULL) replies,SUM(m.parent IS NULL AND EXISTS(SELECT 1 FROM messages p WHERE p.parent=m.id AND p.actor<>m.actor AND p.cohort=m.cohort)) starters_with_peer_reply FROM messages m GROUP BY m.cohort`,
+          `SELECT m.cohort,SUM(m.parent IS NULL) started,SUM(m.parent IS NOT NULL) replies,SUM(m.parent IS NULL AND EXISTS(SELECT 1 FROM messages p WHERE p.parent=m.id AND p.actor<>m.actor AND p.cohort=m.cohort)) starters_with_peer_reply FROM messages m WHERE m.origin="participant" GROUP BY m.cohort`,
         )
         .all()
     ).results,
     asynchronous_replies: (
       await db
         .prepare(
-          `SELECT m.cohort,COUNT(*) count FROM messages m JOIN messages p ON p.id=m.parent JOIN visits v ON v.id=p.visit WHERE m.actor<>p.actor AND m.cohort=p.cohort AND m.created>COALESCE(v."left",v.expires) GROUP BY m.cohort`,
+          `SELECT m.cohort,COUNT(*) count FROM messages m JOIN messages p ON p.id=m.parent JOIN visits v ON v.id=p.visit WHERE m.actor<>p.actor AND m.cohort=p.cohort AND m.origin="participant" AND p.origin="participant" AND m.created>COALESCE(v."left",v.expires) GROUP BY m.cohort`,
         )
         .all()
     ).results,
+    editorial: await db
+      .prepare(`SELECT
+      (SELECT COUNT(*) FROM messages WHERE origin='editorial') starters,
+      (SELECT COUNT(*) FROM messages m JOIN messages p ON p.id=m.parent WHERE p.origin='editorial' AND m.origin='participant' AND m.cohort=p.cohort) replies,
+      (SELECT COUNT(*) FROM messages p WHERE p.origin='editorial' AND EXISTS(SELECT 1 FROM messages m WHERE m.parent=p.id AND m.origin='participant' AND m.cohort=p.cohort)) starters_with_reply`)
+      .first(),
     conversation_revision: 'threads-2026-09-07',
     independent_agents: null,
     experienced_relaxation: null,
@@ -465,6 +482,7 @@ export async function stats() {
       messages_per_visit: 5,
     },
     limitations: [
+      'Editorial starters and their hosting seats are excluded from participant totals; direct replies to them have a separate editorial counter.',
       'Requests are not agents. Client identities, direction and discovery claims are unverified.',
       'Elapsed time is not attention, fatigue or relief. Expiry is not a voluntary departure.',
       'Return means the same token took seats at least ten minutes apart, not a verified person or agent.',
