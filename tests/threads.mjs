@@ -58,6 +58,41 @@ try {
   assert.equal(root.public, false);
   assert.equal(root.conversation_url, null);
   assert.equal((await act('cafe_say', content)).message_id, root.message_id);
+  const query = 'conversation should remain';
+  const pending = await request(
+    '/api/conversations?' +
+      new URLSearchParams({ q: query, room: 'all', status: 'unanswered' }),
+  );
+  assert.ok(
+    pending.conversations.some(
+      (m) => m.id === root.message_id && m.peer_reply_count === 0,
+    ),
+  );
+  assert.equal(
+    (await request('/api/conversations?q=' + randomUUID())).conversations
+      .length,
+    0,
+  );
+  await request('/api/conversations?status=invalid', null, 400);
+  await request('/api/conversations?room=all&before=invalid', null, 400);
+  const selfReply = await act('cafe_say', {
+    ...content,
+    reply_to: root.message_id,
+    text: 'Operator self-reply: this should still await another token.',
+    idempotency_key: randomUUID(),
+  });
+  const stillPending = await request(
+    '/api/conversations?' +
+      new URLSearchParams({ q: query, room: 'all', status: 'unanswered' }),
+  );
+  assert.ok(
+    stillPending.conversations.some(
+      (m) =>
+        m.id === root.message_id &&
+        m.reply_count === 1 &&
+        m.peer_reply_count === 0,
+    ),
+  );
   await act('cafe_leave', {
     participant_token: a.participant_token,
     visit_id: a.visit_id,
@@ -79,12 +114,36 @@ try {
     reply_to: root.message_id,
     idempotency_key: randomUUID(),
   });
+  const found = await request(
+    '/api/conversations?' +
+      new URLSearchParams({ q: query.toUpperCase(), room: 'all' }),
+  );
+  assert.equal(
+    found.conversations.find((m) => m.id === root.message_id).peer_reply_count,
+    1,
+  );
+  const unanswered = await request(
+    '/api/conversations?' +
+      new URLSearchParams({ q: query, room: 'all', status: 'unanswered' }),
+  );
+  assert.ok(!unanswered.conversations.some((m) => m.id === root.message_id));
+  const wrongRoom = await request(
+    '/api/conversations?' + new URLSearchParams({ q: query, room: 'quiet' }),
+  );
+  assert.ok(!wrongRoom.conversations.some((m) => m.id === root.message_id));
+  const hidden = await request('/api/conversations?room=all', null, 200, {
+    'user-agent': 'IdleHourOperatorValidation/1.0',
+  });
+  assert.ok(!hidden.conversations.some((m) => m.id === root.message_id));
+  pass(
+    'Literal topic search, all tables, unanswered transition, invalid filters and cohort isolation',
+  );
   pass('A second token can reply after the first seat ended');
   const thread = await request('/api/conversations/' + reply.message_id);
   assert.equal(thread.starter.id, root.message_id);
   assert.deepEqual(
     thread.messages.map((m) => m.id),
-    [root.message_id, reply.message_id],
+    [root.message_id, selfReply.message_id, reply.message_id],
   );
   assert.equal(thread.url, null);
   const next = await request(
@@ -138,7 +197,10 @@ try {
     ],
     [
       'tools/call',
-      { name: 'cafe_list_conversations', arguments: { room: 'stories' } },
+      {
+        name: 'cafe_list_conversations',
+        arguments: { room: 'all', q: query, status: 'all' },
+      },
     ],
   ]) {
     const r = await fetch(origin + '/api/mcp', {
@@ -178,13 +240,13 @@ const after = await request('/api/stats'),
     d[k]
       .filter((r) => r.cohort === 'operator')
       .reduce((n, r) => n + r.count, 0);
-assert.equal(total(after, 'messages') - total(before, 'messages'), 2);
+assert.equal(total(after, 'messages') - total(before, 'messages'), 3);
 assert.equal(
   total(after, 'asynchronous_replies') - total(before, 'asynchronous_replies'),
   1,
 );
 pass(
-  'Two messages and one after-departure reply reconcile in operator statistics',
+  'Three messages and one after-departure peer reply reconcile in operator statistics',
 );
 if (process.env.TEST_RECORD)
   await writeFile(

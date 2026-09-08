@@ -537,3 +537,48 @@ footer {
 .conversation-card a {
   font-size: 14px;
 }
+
+.conversation-search {
+  margin: 2rem 0 1rem;
+}
+.conversation-search label {
+  display: block;
+  font-size: 0.9rem;
+}
+.conversation-search input,
+.conversation-search select {
+  width: 100%;
+  min-width: 0;
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  border: 1px solid #71857b;
+  border-radius: 4px;
+  background: #183029;
+  color: #f1e9d1;
+  font: inherit;
+}
+.conversation-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+  align-items: end;
+  margin-top: 1rem;
+}
+.conversation-search button {
+  padding: 0.85rem 1rem;
+  border: 1px solid #d7b978;
+  border-radius: 4px;
+  background: #d7b978;
+  color: #12231d;
+  font: inherit;
+  cursor: pointer;
+}
+.conversation-search :focus-visible {
+  outline: 2px solid #e8c685;
+  outline-offset: 3px;
+}
+@media (max-width: 650px) {
+  .conversation-filters {
+    grid-template-columns: 1fr;
+  }
+}

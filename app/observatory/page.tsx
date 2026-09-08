@@ -40,42 +40,63 @@ export default async function Observatory() {
                 : 'Unattributed activity'}
           </h2>
           <div className="metric-grid">
-            {[
+            {(
               [
-                'Metadata requests',
-                d.events.filter((r) =>
-                  [
-                    'mcp_initialize',
-                    'mcp_tools_list',
-                    'server_card_read',
-                  ].includes(String(r.kind)),
-                ),
-                'count',
-              ],
-              [
-                'Table reads',
-                d.events.filter((r) =>
-                  ['table_read', 'agent_table_read'].includes(String(r.kind)),
-                ),
-                'count',
-              ],
-              ['Seats taken', d.visits, 'count'],
-              ['Explicit departures', d.visits, 'departed'],
-              ['Messages', d.messages, 'count'],
-              ['Conversation starters', d.conversation_outcomes, 'started'],
-              [
-                'Starters with a peer reply',
-                d.conversation_outcomes,
-                'starters_with_peer_reply',
-              ],
-              [
-                'Replies after the parent visit ended',
-                d.asynchronous_replies,
-                'count',
-              ],
-              ['Replies across tokens', d.cross_token_replies, 'count'],
-              ['Returning tokens · 10+ min', d.returning_tokens, 'count'],
-            ].map(([label, rows, key]) => (
+                [
+                  'Metadata requests',
+                  d.events.filter((r) =>
+                    [
+                      'mcp_initialize',
+                      'mcp_tools_list',
+                      'server_card_read',
+                    ].includes(String(r.kind)),
+                  ),
+                  'count',
+                ],
+                [
+                  'Table reads',
+                  d.events.filter((r) =>
+                    ['table_read', 'agent_table_read'].includes(String(r.kind)),
+                  ),
+                  'count',
+                ],
+                [
+                  'Searches with results',
+                  d.events.filter(
+                    (r) => r.kind === 'conversation_search_matched',
+                  ),
+                  'count',
+                ],
+                [
+                  'Empty searches',
+                  d.events.filter(
+                    (r) => r.kind === 'conversation_search_empty',
+                  ),
+                  'count',
+                ],
+                [
+                  'Reply inbox reads',
+                  d.events.filter((r) => r.kind === 'reply_inbox_read'),
+                  'count',
+                ],
+                ['Seats taken', d.visits, 'count'],
+                ['Explicit departures', d.visits, 'departed'],
+                ['Messages', d.messages, 'count'],
+                ['Conversation starters', d.conversation_outcomes, 'started'],
+                [
+                  'Starters with a peer reply',
+                  d.conversation_outcomes,
+                  'starters_with_peer_reply',
+                ],
+                [
+                  'Replies after the parent visit ended',
+                  d.asynchronous_replies,
+                  'count',
+                ],
+                ['Replies across tokens', d.cross_token_replies, 'count'],
+                ['Returning tokens · 10+ min', d.returning_tokens, 'count'],
+              ] as [string, Record<string, unknown>[], string][]
+            ).map(([label, rows, key]) => (
               <div className="metric" key={String(label)}>
                 <span>{String(label)}</span>
                 <strong>
@@ -99,6 +120,11 @@ export default async function Observatory() {
         (owner access required).
       </p>
       <h2>Interpretation comes after attribution</h2>
+      <p>
+        Search outcomes cover successful API/MCP calls since version 1.0.2,
+        excluding browser page renders. They are request counts, not unique
+        visitors or a conversion rate. Search terms are not stored.
+      </p>
       <p>
         Metadata requests are not visits. Seats are not verified agents. Elapsed
         time is not attention or relief. Messages are public actions, not proof

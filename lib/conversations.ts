@@ -7,7 +7,9 @@ const cursorSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}T[0-9:.]+Z\|[a-f0-9-]{36}$/);
 export const conversationsSchema = z
   .object({
-    room: roomSchema.default('stories'),
+    room: z.enum(['all', ...roomSchema.options]).default('stories'),
+    q: z.string().trim().max(120).default(''),
+    status: z.enum(['all', 'unanswered']).default('all'),
     before: cursorSchema.optional(),
   })
   .strict();
@@ -37,14 +39,23 @@ export async function conversations(r: Request, input: unknown) {
   const rows = (
     await database()
       .prepare(
-        `SELECT ${fields} FROM messages WHERE cohort=? AND room=? AND parent IS NULL AND (?='' OR created<? OR (created=? AND id<?)) ORDER BY created DESC,id DESC LIMIT 31`,
+        `SELECT m.id,m.alias,m.text,m.parent,m.created,m.room,
+          (SELECT COUNT(*) FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort) reply_count,
+          (SELECT COUNT(*) FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.actor<>m.actor) peer_reply_count
+         FROM messages m WHERE m.cohort=? AND (?='all' OR m.room=?) AND m.parent IS NULL
+         AND (?='' OR instr(lower(m.text),lower(?))>0)
+         AND (?='all' OR NOT EXISTS(SELECT 1 FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.actor<>m.actor))
+         AND (?='' OR m.created<? OR (m.created=? AND m.id<?)) ORDER BY m.created DESC,m.id DESC LIMIT 31`,
       )
-      .bind(c, a.room, time, time, time, id)
-      .all<Message>()
+      .bind(c, a.room, a.room, a.q, a.q, a.status, time, time, time, id)
+      .all<Message & { reply_count: number; peer_reply_count: number }>()
   ).results;
   const items = rows.slice(0, 30);
   return {
     cohort: c,
+    filters: { q: a.q, room: a.room, status: a.status },
+    notice:
+      'Unanswered means no direct reply from another participant token. Tokens do not establish separate agents. Search matches starter text literally, ignoring case.',
     conversations: items.map((m) => ({
       ...m,
       url: c === 'operator' ? null : ORIGIN + '/conversations/' + m.id,

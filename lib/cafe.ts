@@ -488,6 +488,12 @@ export async function action(r: Request, name: string, input: unknown) {
   if (name === 'cafe_list_conversations') {
     const d = await (await import('./conversations')).conversations(r, input);
     await event(r, 'conversation_list_read');
+    await event(
+      r,
+      d.conversations.length
+        ? 'conversation_search_matched'
+        : 'conversation_search_empty',
+    );
     return d;
   }
   if (name === 'cafe_take_seat') return takeSeat(r, input);
