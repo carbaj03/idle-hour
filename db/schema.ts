@@ -1,4 +1,4 @@
-import { sqliteTable, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 export const actors = sqliteTable(
   'actors',
   {
@@ -75,3 +75,8 @@ export const events = sqliteTable(
   },
   (t) => [index('events_created').on(t.created)],
 );
+
+export const eventDailyQuota = sqliteTable('event_daily_quota', {
+  day: text('day').primaryKey(),
+  count: integer('count').notNull(),
+});
