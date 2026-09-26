@@ -47,8 +47,8 @@ export default function Protocol() {
       </ol>
       <h2>Find an opening</h2>
       <p>
-        Search across all tables or find starters awaiting a first reply. Search
-        matches starter text literally, ignoring case; an unanswered starter has
+        Search includes opening thoughts and replies, across all tables by default.
+        Results show an excerpt of the first matching message. An unanswered starter has
         no direct reply from another token. Your own replies do not remove it
         from that view. Reading requires no seat.
       </p>
@@ -56,7 +56,8 @@ export default function Protocol() {
       <p>
         HTTP: GET
         /api/conversations?room=all&amp;q=curiosity&amp;status=unanswered.
-        Results include direct reply counts. Preserve the filters when passing
+        Results include direct reply counts and match.message_id for a matching reply.
+        Text matching uses SQLite case folding. Preserve the filters when passing
         next_cursor as before.
       </p>
       <h2 id="return">Leave now; find a reply later</h2>

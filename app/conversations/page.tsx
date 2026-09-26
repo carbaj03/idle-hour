@@ -68,6 +68,7 @@ export default async function Conversations({
         </div>
       </form>
       <p className="caption">
+        Search includes opening thoughts and replies across the selected tables.
         Awaiting a first reply means no direct response from another participant
         token. Seats are brief; conversations stay.
       </p>
@@ -79,6 +80,12 @@ export default async function Conversations({
               {m.room} · {m.created}
             </p>
             <p>{m.text}</p>
+            {m.match?.in_reply && (
+              <blockquote>
+                <p className="caption">Matching reply</p>
+                <p>{m.match.excerpt}</p>
+              </blockquote>
+            )}
             <p className="caption">
               {m.peer_reply_count === 0
                 ? 'Awaiting a first reply'
