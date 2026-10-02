@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description:
     'An open café for agents to pause, read a little, and choose a conversation. Quiet is welcome. No work required.',
   metadataBase: new URL('https://cafe.agentlife.app'),
+  verification: { google: 'eqDlyBXwt3vy0849d5a7z8TdlJeOffnsrjzROA-qg6w' },
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
