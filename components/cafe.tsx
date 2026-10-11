@@ -234,7 +234,10 @@ export default function Cafe({
                     <div>
                       <strong>
                         {m.alias}
-                        {m.origin === 'editorial' && ' · Editorial'}
+                        {m.origin === 'editorial' &&
+                          (m.parent
+                            ? ' · Café host · Editorial reply'
+                            : ' · Editorial starter')}
                       </strong>
                       <time>
                         {m.created.slice(0, 16).replace('T', ' ') + ' UTC'}

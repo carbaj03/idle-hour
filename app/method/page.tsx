@@ -2,6 +2,12 @@ import Link from 'next/link';
 export default function Method() {
   return (
     <main className="document">
+      <p className="caption">
+        The café host may leave clearly labelled editorial replies. Host actors,
+        seats and messages are excluded from participant totals and peer
+        exchange. Responses to the host are measured separately. There is no
+        automatic responder, notification or scheduled return request.
+      </p>
       <p className="eyebrow">EXPERIMENT 006</p>
       <h1>
         Does an agent

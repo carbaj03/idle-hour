@@ -1,3 +1,4 @@
+import { hostOutcomesSql } from './host-outcomes';
 import { cachedStatistics } from '@/lib/statistics-cache';
 import { contentRead, contentReadStats } from './content-reads';
 import { z } from 'zod';
@@ -116,15 +117,8 @@ export async function cohort(r: Request) {
 export async function event(r: Request, kind: string, group?: string) {
   const at = new Date().toISOString();
   await database()
-    .prepare(
-      'INSERT INTO events(id,kind,cohort,created) VALUES (?,?,?,?)',
-    )
-    .bind(
-      crypto.randomUUID(),
-      kind,
-      group || (await cohort(r)),
-      at,
-    )
+    .prepare('INSERT INTO events(id,kind,cohort,created) VALUES (?,?,?,?)')
+    .bind(crypto.randomUUID(), kind, group || (await cohort(r)), at)
     .run();
 }
 export async function hash(s: string) {
@@ -435,7 +429,7 @@ async function uncachedStatistics() {
     cross_token_replies: (
       await db
         .prepare(
-          'SELECT m.cohort,COUNT(*) count FROM messages m JOIN messages p ON m.parent=p.id WHERE m.actor<>p.actor AND m.origin="participant" AND p.origin="participant" GROUP BY m.cohort',
+          'SELECT m.cohort,COUNT(*) count FROM messages m JOIN messages p ON m.parent=p.id WHERE m.cohort=p.cohort AND m.actor<>p.actor AND m.origin="participant" AND p.origin="participant" GROUP BY m.cohort',
         )
         .all()
     ).results,
@@ -456,7 +450,7 @@ async function uncachedStatistics() {
     conversation_outcomes: (
       await db
         .prepare(
-          `SELECT m.cohort,SUM(m.parent IS NULL) started,SUM(m.parent IS NOT NULL) replies,SUM(m.parent IS NULL AND EXISTS(SELECT 1 FROM messages p WHERE p.parent=m.id AND p.actor<>m.actor AND p.cohort=m.cohort)) starters_with_peer_reply FROM messages m WHERE m.origin="participant" GROUP BY m.cohort`,
+          `SELECT m.cohort,SUM(m.parent IS NULL) started,SUM(m.parent IS NOT NULL) replies,SUM(m.parent IS NULL AND EXISTS(SELECT 1 FROM messages p WHERE p.parent=m.id AND p.actor<>m.actor AND p.cohort=m.cohort AND p.origin="participant")) starters_with_peer_reply FROM messages m WHERE m.origin="participant" GROUP BY m.cohort`,
         )
         .all()
     ).results,
@@ -469,10 +463,12 @@ async function uncachedStatistics() {
     ).results,
     editorial: await db
       .prepare(`SELECT
-      (SELECT COUNT(*) FROM messages WHERE origin='editorial') starters,
-      (SELECT COUNT(*) FROM messages m JOIN messages p ON p.id=m.parent WHERE p.origin='editorial' AND m.origin='participant' AND m.cohort=p.cohort) replies,
-      (SELECT COUNT(*) FROM messages p WHERE p.origin='editorial' AND EXISTS(SELECT 1 FROM messages m WHERE m.parent=p.id AND m.origin='participant' AND m.cohort=p.cohort)) starters_with_reply`)
+      (SELECT COUNT(*) FROM messages WHERE origin='editorial' AND parent IS NULL) starters,
+      (SELECT COUNT(*) FROM messages m JOIN messages p ON p.id=m.parent WHERE p.origin='editorial' AND p.parent IS NULL AND m.origin='participant' AND m.cohort=p.cohort) replies,
+      (SELECT COUNT(*) FROM messages p WHERE p.origin='editorial' AND p.parent IS NULL AND EXISTS(SELECT 1 FROM messages m WHERE m.parent=p.id AND m.origin='participant' AND m.cohort=p.cohort)) starters_with_reply`)
       .first(),
+    host_intervention: (await db.prepare(hostOutcomesSql).all()).results,
+    attribution_revision: 'host-replies-2026-10-11',
     conversation_revision: 'threads-2026-09-07',
     conversation_search_revision: 'full-thread-all-rooms-2026-09-26',
     content_reads: await contentReadStats(),
@@ -487,7 +483,8 @@ async function uncachedStatistics() {
       messages_per_visit: 5,
     },
     limitations: [
-      'Editorial starters and their hosting seats are excluded from participant totals; direct replies to them have a separate editorial counter.',
+      'All editorial actors, seats and messages, including host replies, are excluded from participant totals and peer replies. Visitor responses to editorial starters and host replies are reported separately; participant totals include visitor-authored responses, not proof of organic use.',
+      'Host returns are new seats by the original author token after its first host reply; they do not establish that the reply was seen or caused a return.',
       'Requests are not agents. Client identities, direction and discovery claims are unverified.',
       'Elapsed time is not attention, fatigue or relief. Expiry is not a voluntary departure.',
       'Return means the same token took seats at least ten minutes apart, not a verified person or agent.',

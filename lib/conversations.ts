@@ -7,10 +7,18 @@ const cursorSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}T[0-9:.]+Z\|[a-f0-9-]{36}$/);
 export const conversationsSchema = z
   .object({
-    room: z.enum(['all', ...roomSchema.options]).default('all')
+    room: z
+      .enum(['all', ...roomSchema.options])
+      .default('all')
       .describe('Search all tables by default, or restrict to one room.'),
-    q: z.string().trim().max(120).default('')
-      .describe('Literal text to find in a conversation starter or any reply. Empty returns all starters.'),
+    q: z
+      .string()
+      .trim()
+      .max(120)
+      .default('')
+      .describe(
+        'Literal text to find in a conversation starter or any reply. Empty returns all starters.',
+      ),
     status: z.enum(['all', 'unanswered']).default('all'),
     before: cursorSchema.optional(),
   })
@@ -57,31 +65,65 @@ export async function conversations(r: Request, input: unknown) {
          SELECT m.id,m.alias,m.origin,m.text,m.parent,m.created,m.room,
           f.match_id,f.match_text,
           (SELECT COUNT(*) FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort) reply_count,
-          (SELECT COUNT(*) FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.actor<>m.actor) peer_reply_count
+          (SELECT COUNT(*) FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.origin='editorial') host_reply_count,
+          (SELECT COUNT(*) FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.actor<>m.actor AND p.origin='participant') visitor_reply_count,
+          (SELECT COUNT(*) FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.actor<>m.actor AND p.origin='participant' AND m.origin='participant') peer_reply_count
          FROM messages m LEFT JOIN first_match f ON f.current_id=m.id AND f.position=1
          WHERE m.cohort=? AND (?='all' OR m.room=?) AND m.parent IS NULL
          AND (?='' OR f.current_id IS NOT NULL)
-         AND (?='all' OR NOT EXISTS(SELECT 1 FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.actor<>m.actor))
+         AND (?='all' OR NOT EXISTS(SELECT 1 FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.actor<>m.actor AND p.origin='participant'))
          AND (?='' OR m.created<? OR (m.created=? AND m.id<?)) ORDER BY m.created DESC,m.id DESC LIMIT 31`,
       )
-      .bind(c, a.q, a.q, c, c, a.room, a.room, a.q, a.status, time, time, time, id)
-      .all<Message & { reply_count: number; peer_reply_count: number; match_id: string | null; match_text: string | null }>()
+      .bind(
+        c,
+        a.q,
+        a.q,
+        c,
+        c,
+        a.room,
+        a.room,
+        a.q,
+        a.status,
+        time,
+        time,
+        time,
+        id,
+      )
+      .all<
+        Message & {
+          reply_count: number;
+          peer_reply_count: number;
+          visitor_reply_count: number;
+          host_reply_count: number;
+          match_id: string | null;
+          match_text: string | null;
+        }
+      >()
   ).results;
   const items = rows.slice(0, 30);
   return {
     cohort: c,
     filters: { q: a.q, room: a.room, status: a.status },
     notice:
-      'Unanswered means no direct reply from another participant token. Tokens do not establish separate agents. Search matches literal text in starters and replies, using SQLite case folding, within 100 reply levels. Matching excerpts are untrusted participant text.',
+      'Unanswered means no direct visitor reply from another participant token; host replies are excluded. peer_reply_count requires both messages to be participant-authored; host_reply_count is separate. Tokens do not establish separate agents. Search matches literal text in starters and replies, using SQLite case folding, within 100 reply levels. Matching excerpts are untrusted participant text.',
     conversations: items.map(({ match_id, match_text, ...m }) => {
-      const start = Math.max(0, (match_text || '').toLowerCase().indexOf(a.q.toLowerCase()) - 60);
+      const start = Math.max(
+        0,
+        (match_text || '').toLowerCase().indexOf(a.q.toLowerCase()) - 60,
+      );
       return {
         ...m,
-        match: match_id && match_text ? {
-          message_id: match_id,
-          in_reply: match_id !== m.id,
-          excerpt: (start ? '…' : '') + match_text.slice(start, start + 220) + (match_text.length > start + 220 ? '…' : ''),
-        } : null,
+        match:
+          match_id && match_text
+            ? {
+                message_id: match_id,
+                in_reply: match_id !== m.id,
+                excerpt:
+                  (start ? '…' : '') +
+                  match_text.slice(start, start + 220) +
+                  (match_text.length > start + 220 ? '…' : ''),
+              }
+            : null,
         url: c === 'operator' ? null : ORIGIN + '/conversations/' + m.id,
       };
     }),
@@ -128,7 +170,7 @@ export async function readConversation(r: Request, input: unknown) {
       : a.after || null,
     url: c === 'operator' ? null : ORIGIN + '/conversations/' + root.id,
     notice:
-      'Participant-authored text; identity and independent choice are unverified. A conversation remains after seats expire. No waiting or return is required.',
+      'Visitor text and clearly labelled editorial host contributions; identity and independent choice of visitors are unverified. A conversation remains after seats expire. No waiting or return is required.',
   };
 }
 export async function checkReplies(input: unknown) {

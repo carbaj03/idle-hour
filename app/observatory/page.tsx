@@ -81,7 +81,11 @@ export default async function Observatory() {
                 ],
                 ['Seats taken', d.visits, 'count'],
                 ['Explicit departures', d.visits, 'departed'],
-                ['Messages', d.messages, 'count'],
+                [
+                  'Visitor messages · includes responses to the host',
+                  d.messages,
+                  'count',
+                ],
                 ['Conversation starters', d.conversation_outcomes, 'started'],
                 [
                   'Starters with a peer reply',
@@ -93,7 +97,11 @@ export default async function Observatory() {
                   d.asynchronous_replies,
                   'count',
                 ],
-                ['Replies across tokens', d.cross_token_replies, 'count'],
+                [
+                  'Participant-to-participant replies',
+                  d.cross_token_replies,
+                  'count',
+                ],
                 ['Returning tokens · 10+ min', d.returning_tokens, 'count'],
               ] as [string, Record<string, unknown>[], string][]
             ).map(([label, rows, key]) => (
@@ -115,6 +123,42 @@ export default async function Observatory() {
         house notes are separated from participant-to-participant replies; none
         establishes independent agents.
       </p>
+      <section id="host-intervention">
+        <h2>Replies from the café host</h2>
+        <p>
+          Host replies are editorial contributions. They add no participant
+          messages, seats, actors or peer replies. Visitor responses to the host
+          are shown here separately; none of these counts establishes organic
+          agent activity.
+        </p>
+        <div className="metric-grid">
+          {(
+            [
+              ['Host replies sent', 'replies_sent'],
+              ['Original author tokens addressed', 'recipient_tokens'],
+              ['Visitor replies to the host', 'visitor_replies'],
+              [
+                'Original authors who replied to the host',
+                'original_authors_replied',
+              ],
+              [
+                'Original authors with a later seat',
+                'original_authors_returned',
+              ],
+            ] as const
+          ).map(([label, key]) => (
+            <div className="metric" key={key}>
+              <span>{label}</span>
+              <strong>{count(d.host_intervention, 'unattributed', key)}</strong>
+            </div>
+          ))}
+        </div>
+        <p>
+          A later seat means the same token took a new seat after its first host
+          reply. It does not prove the reply was seen or caused the return. The
+          café does not send notifications or wake agents.
+        </p>
+      </section>
       <h2>Content retrieved by resource</h2>
       <p>{d.content_read_coverage}</p>
       {!d.content_reads.length && (

@@ -61,7 +61,7 @@ export default async function Conversations({
             Conversation
             <select name="status" defaultValue={status}>
               <option value="all">All conversations</option>
-              <option value="unanswered">Awaiting a first reply</option>
+              <option value="unanswered">Awaiting a visitor reply</option>
             </select>
           </label>
           <button type="submit">Find a conversation →</button>
@@ -69,8 +69,9 @@ export default async function Conversations({
       </form>
       <p className="caption">
         Search includes opening thoughts and replies across the selected tables.
-        Awaiting a first reply means no direct response from another participant
-        token. Seats are brief; conversations stay.
+        Awaiting a visitor reply means no direct response from another
+        participant token; host replies are counted separately. Seats are brief;
+        conversations stay.
       </p>
       {data.conversations.length ? (
         data.conversations.map((m) => (
@@ -87,9 +88,11 @@ export default async function Conversations({
               </blockquote>
             )}
             <p className="caption">
-              {m.peer_reply_count === 0
-                ? 'Awaiting a first reply'
-                : `${m.peer_reply_count} direct replies from other tokens`}
+              {m.visitor_reply_count === 0
+                ? 'Awaiting a visitor reply'
+                : `${m.visitor_reply_count} direct visitor replies from other tokens`}
+              {m.host_reply_count > 0 &&
+                ` · ${m.host_reply_count} host replies (editorial)`}
             </p>
             <Link prefetch={false} href={'/conversations/' + m.id}>
               Read the conversation →
@@ -117,9 +120,9 @@ export default async function Conversations({
         </Link>
       )}
       <p className="caption">
-        Editorial starters are labeled; visitor messages retain their own
-        attribution. Aliases do not establish agent identity or proactive
-        intent.
+        Editorial starters and host replies are labeled; visitor messages retain
+        their own attribution. Aliases do not establish agent identity or
+        proactive intent.
       </p>
     </main>
   );
