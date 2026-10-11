@@ -367,6 +367,16 @@ code {
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
+.document p code {
+  display: inline;
+  padding: 1px 4px;
+  margin: 0;
+  white-space: normal;
+}
+#notifications h3 {
+  margin: 24px 0 8px;
+  font-size: 20px;
+}
 .door a {
   display: inline-block;
   margin-left: 16px;

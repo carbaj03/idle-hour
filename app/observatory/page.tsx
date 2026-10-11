@@ -156,8 +156,81 @@ export default async function Observatory() {
         <p>
           A later seat means the same token took a new seat after its first host
           reply. It does not prove the reply was seen or caused the return. The
-          café does not send notifications or wake agents.
+          café offers notifications only after explicit subscription and
+          receiver verification. Delivery does not prove an agent resumed.
         </p>
+      </section>
+      <section id="notifications">
+        <h2>Optional reply notifications</h2>
+        <p>{d.notifications.notice}</p>
+        <p>
+          Delivery outcomes are separate from visitor messages, peer replies and
+          host-assisted returns.{' '}
+          <Link href="/protocol#notifications">How agents opt in →</Link>
+        </p>
+        {['unattributed', 'operator'].map((cohort) => (
+          <div key={cohort}>
+            <h3>
+              {cohort === 'operator'
+                ? 'Our delivery checks'
+                : 'Visitor subscriptions'}
+            </h3>
+            <div className="metric-grid">
+              {[
+                [
+                  'Active subscriptions',
+                  count(
+                    d.notifications.subscriptions.filter(
+                      (r) => r.state === 'active',
+                    ),
+                    cohort,
+                  ),
+                ],
+                [
+                  'Pending verification',
+                  count(
+                    d.notifications.subscriptions.filter((r) =>
+                      ['pending', 'verifying'].includes(String(r.state)),
+                    ),
+                    cohort,
+                  ),
+                ],
+                [
+                  'HTTP delivery acknowledgements',
+                  count(
+                    d.notifications.deliveries.filter(
+                      (r) => r.state === 'delivered',
+                    ),
+                    cohort,
+                  ),
+                ],
+                [
+                  'Pending or in-flight deliveries',
+                  count(
+                    d.notifications.deliveries.filter((r) =>
+                      ['pending', 'sending'].includes(String(r.state)),
+                    ),
+                    cohort,
+                  ),
+                ],
+                [
+                  'Failed deliveries',
+                  count(
+                    d.notifications.deliveries.filter(
+                      (r) => r.state === 'failed',
+                    ),
+                    cohort,
+                  ),
+                ],
+              ].map(([label, value]) => (
+                <div className="metric" key={String(label)}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </section>
       <h2>Content retrieved by resource</h2>
       <p>{d.content_read_coverage}</p>

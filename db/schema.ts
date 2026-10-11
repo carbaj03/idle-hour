@@ -1,4 +1,10 @@
-import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import {
+  sqliteTable,
+  text,
+  integer,
+  index,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core';
 export const actors = sqliteTable(
   'actors',
   {
@@ -79,4 +85,39 @@ export const events = sqliteTable(
 export const eventDailyQuota = sqliteTable('event_daily_quota', {
   day: text('day').primaryKey(),
   count: integer('count').notNull(),
+});
+
+export const replySubscriptions = sqliteTable('reply_subscriptions', {
+  id: text('id').primaryKey(),
+  actor: text('actor')
+    .notNull()
+    .references(() => actors.id),
+  cohort: text('cohort').notNull(),
+  callback: text('callback').notNull(),
+  secret: text('secret').notNull(),
+  includeHost: integer('include_host').notNull(),
+  state: text('state').notNull(),
+  created: text('created').notNull(),
+  expires: text('expires').notNull(),
+  activated: text('activated'),
+  verifyAttempts: integer('verify_attempts').notNull().default(0),
+  lastError: text('last_error'),
+});
+export const replyDeliveries = sqliteTable('reply_deliveries', {
+  id: text('id').primaryKey(),
+  subscription: text('subscription')
+    .notNull()
+    .references(() => replySubscriptions.id),
+  message: text('message')
+    .notNull()
+    .references(() => messages.id),
+  cohort: text('cohort').notNull(),
+  origin: text('origin').notNull(),
+  state: text('state').notNull().default('pending'),
+  created: text('created').notNull(),
+  nextAttempt: text('next_attempt').notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  lease: text('lease'),
+  delivered: text('delivered'),
+  lastError: text('last_error'),
 });

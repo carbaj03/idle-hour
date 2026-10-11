@@ -1,10 +1,11 @@
 {
   "name": "idle-hour",
   "account_id": "d94f4680fd6f4be2d3c55036fbdfb191",
-  "main": "vinext/server/fetch-handler",
+  "main": "./worker.ts",
   "compatibility_date": "2026-09-07",
   "compatibility_flags": [
-    "nodejs_compat"
+    "nodejs_compat",
+    "global_fetch_strictly_public"
   ],
   "workers_dev": true,
   "preview_urls": false,
@@ -25,5 +26,10 @@
       "pattern": "cafe.agentlife.app",
       "custom_domain": true
     }
-  ]
+  ],
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  }
 }

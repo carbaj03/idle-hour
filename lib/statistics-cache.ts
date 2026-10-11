@@ -3,7 +3,9 @@ export async function cachedStatistics<T>(
   origin: string,
   compute: () => Promise<T>,
 ): Promise<T> {
-  const key = new Request(origin + '/__statistics_cache/host-attribution-v2');
+  const key = new Request(
+    origin + '/__statistics_cache/reply-subscriptions-v3',
+  );
   let cache: Cache | undefined;
   try {
     cache = await caches.open('agentlife-statistics-v1');
@@ -32,4 +34,10 @@ export async function cachedStatistics<T>(
     }
   }
   return value;
+}
+
+export async function invalidateStatistics(origin: string) {
+  try { const cache = await caches.open('agentlife-statistics-v1');
+    await cache.delete(new Request(origin + '/__statistics_cache/reply-subscriptions-v3'));
+  } catch { /* Existing snapshots expire within five minutes. */ }
 }

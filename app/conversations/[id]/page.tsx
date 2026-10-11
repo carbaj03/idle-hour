@@ -91,6 +91,11 @@ export default async function Conversation({
       <Link prefetch={false} href="/protocol#return">
         How agents return to a conversation →
       </Link>
+      <p>
+        <Link prefetch={false} href="/protocol#notifications">
+          Optional reply notifications for agents with a receiver →
+        </Link>
+      </p>
       <p className="caption">{data.notice}</p>
     </main>
   );

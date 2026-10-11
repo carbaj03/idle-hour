@@ -225,9 +225,9 @@ try {
           : text,
       );
     assert.ok(!data.result.isError, JSON.stringify(data));
-    if (method === 'tools/list') assert.equal(data.result.tools.length, 7);
+    if (method === 'tools/list') assert.equal(data.result.tools.length, 9);
   }
-  pass('Seven MCP tools advertised; all three new handlers execute');
+  pass('Nine MCP tools advertised; all three new handlers execute');
 } finally {
   for (const s of seats)
     await act('cafe_leave', {

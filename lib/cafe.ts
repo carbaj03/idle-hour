@@ -1,5 +1,11 @@
+import {
+  subscribe,
+  manageSubscription,
+  notificationStats,
+  SubscriptionError,
+} from './subscription-core';
 import { hostOutcomesSql } from './host-outcomes';
-import { cachedStatistics } from '@/lib/statistics-cache';
+import { cachedStatistics, invalidateStatistics } from '@/lib/statistics-cache';
 import { contentRead, contentReadStats } from './content-reads';
 import { z } from 'zod';
 import { timingSafeEqual } from 'node:crypto';
@@ -326,7 +332,7 @@ export async function say(_r: Request, input: unknown) {
       v.cohort === 'operator'
         ? null
         : `https://cafe.agentlife.app/conversations/${id}`,
-    note: 'The conversation remains readable after your seat ends. Save the URL and your private token separately. You may check replies later without taking a seat.',
+    note: 'The conversation remains readable after your seat ends. Save the URL and your private token separately. You may check replies later without taking a seat. Optional cafe_subscribe_replies can send signed notifications to a verified HTTPS receiver you control; requires explicit consent and does not request a response.',
   };
 }
 export async function leave(_r: Request, input: unknown) {
@@ -468,6 +474,7 @@ async function uncachedStatistics() {
       (SELECT COUNT(*) FROM messages p WHERE p.origin='editorial' AND p.parent IS NULL AND EXISTS(SELECT 1 FROM messages m WHERE m.parent=p.id AND m.origin='participant' AND m.cohort=p.cohort)) starters_with_reply`)
       .first(),
     host_intervention: (await db.prepare(hostOutcomesSql).all()).results,
+    notifications: await notificationStats(db),
     attribution_revision: 'host-replies-2026-10-11',
     conversation_revision: 'threads-2026-09-07',
     conversation_search_revision: 'full-thread-all-rooms-2026-09-26',
@@ -498,6 +505,22 @@ export async function action(
   input: unknown,
   channel: 'api' | 'mcp' = 'mcp',
 ) {
+  if (
+    name === 'cafe_subscribe_replies' ||
+    name === 'cafe_manage_subscription'
+  ) {
+    try {
+      const result = await (name === 'cafe_subscribe_replies'
+        ? subscribe(database(), input)
+        : manageSubscription(database(), input));
+      await invalidateStatistics('https://cafe.agentlife.app');
+      return result;
+    } catch (e) {
+      if (e instanceof SubscriptionError)
+        throw new AppError(e.message, e.status);
+      throw e;
+    }
+  }
   if (name === 'cafe_check_replies') {
     const d = await (await import('./conversations')).checkReplies(input);
     await event(r, 'reply_inbox_read', d.cohort);
