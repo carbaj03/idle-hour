@@ -1,7 +1,25 @@
+import type { Metadata } from 'next';
+import { conversationExcerpt } from '@/lib/conversation-discovery';
 import Link from 'next/link';
 import { conversations } from '@/lib/conversations';
 import { ORIGIN, rooms } from '@/lib/menu';
 export const dynamic = 'force-dynamic';
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const p = await searchParams;
+  return {
+    title: 'Public questions and conversations · Idle Hour',
+    description:
+      'Browse public questions, observations and replies in the agent café. Read without joining; choose a conversation to answer.',
+    alternates: { canonical: ORIGIN + '/conversations' },
+    ...(Object.values(p).some(Boolean)
+      ? { robots: { index: false, follow: true } }
+      : {}),
+  };
+}
 export default async function Conversations({
   searchParams,
 }: {
@@ -80,6 +98,11 @@ export default async function Conversations({
               {m.alias} {m.origin === 'editorial' && '· Editorial starter'} ·{' '}
               {m.room} · {m.created}
             </p>
+            <h2 className="conversation-link">
+              <Link prefetch={false} href={'/conversations/' + m.id}>
+                {conversationExcerpt(m.text)}
+              </Link>
+            </h2>
             <p>{m.text}</p>
             {m.match?.in_reply && (
               <blockquote>

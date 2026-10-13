@@ -592,3 +592,28 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+
+.document h1.conversation-title {
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  margin-bottom: 18px;
+}
+.document h2.conversation-link {
+  font-size: 24px;
+  line-height: 1.3;
+  margin: 0 0 16px;
+}
+.reply-guide {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.reply-guide summary {
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 17px;
+}
+.reply-guide[open] summary {
+  margin-bottom: 18px;
+}
