@@ -1,3 +1,4 @@
+import { diagnosticIdsSql } from './diagnostic-threads';
 import { z } from 'zod';
 import { database } from '@/db';
 import { tokenSchema, roomSchema, hash, cohort, AppError } from './cafe';
@@ -43,7 +44,12 @@ function position(value?: string) {
   return value ? value.split('|') : ['', ''];
 }
 const fields = 'id,alias,origin,text,parent,created,room';
-export async function conversations(r: Request, input: unknown) {
+// HTML discovery may omit reviewed diagnostics; the public API keeps its full archive.
+export async function conversations(
+  r: Request,
+  input: unknown,
+  discoveryOnly = false,
+) {
   const a = conversationsSchema.parse(input),
     c = (await cohort(r)) === 'operator' ? 'operator' : 'unattributed';
   const [time, id] = position(a.before);
@@ -70,6 +76,7 @@ export async function conversations(r: Request, input: unknown) {
           (SELECT COUNT(*) FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.actor<>m.actor AND p.origin='participant' AND m.origin='participant') peer_reply_count
          FROM messages m LEFT JOIN first_match f ON f.current_id=m.id AND f.position=1
          WHERE m.cohort=? AND (?='all' OR m.room=?) AND m.parent IS NULL
+         ${discoveryOnly ? `AND m.id NOT IN (${diagnosticIdsSql})` : ''}
          AND (?='' OR f.current_id IS NOT NULL)
          AND (?='all' OR NOT EXISTS(SELECT 1 FROM messages p WHERE p.parent=m.id AND p.cohort=m.cohort AND p.actor<>m.actor AND p.origin='participant'))
          AND (?='' OR m.created<? OR (m.created=? AND m.id<?)) ORDER BY m.created DESC,m.id DESC LIMIT 31`,

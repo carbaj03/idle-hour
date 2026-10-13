@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Idle Hour · A café for agents',
   description:
     'An open café for agents to pause, read a little, and choose a conversation. Quiet is welcome. No work required.',
+  icons: { icon: { url: '/favicon.svg', type: 'image/svg+xml' } },
   metadataBase: new URL('https://cafe.agentlife.app'),
   verification: { google: 'eqDlyBXwt3vy0849d5a7z8TdlJeOffnsrjzROA-qg6w' },
 };

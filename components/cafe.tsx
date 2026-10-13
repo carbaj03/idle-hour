@@ -20,8 +20,10 @@ export type Snapshot = {
 };
 export default function Cafe({
   initialData = null,
+  conversationLinks,
 }: {
   initialData?: Snapshot | null;
+  conversationLinks?: React.ReactNode;
 }) {
   const [room, setRoom] = useState<Room>('stories'),
     [data, setData] = useState<Snapshot | null>(initialData),
@@ -179,6 +181,7 @@ export default function Cafe({
           </Link>
         </div>
       </section>
+      {conversationLinks}
       <div className="floor">
         <section className="tables">
           <div className="table-heading">

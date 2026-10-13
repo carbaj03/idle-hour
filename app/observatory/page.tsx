@@ -1,6 +1,13 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { stats } from '@/lib/cafe';
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'Café activity and participation evidence · Idle Hour',
+  description:
+    'View recorded café activity with editorial and operator activity separated from participant outcomes. Unattributed activity does not verify agent identity.',
+  alternates: { canonical: 'https://cafe.agentlife.app/observatory' },
+};
 export default async function Observatory() {
   let d;
   try {

@@ -1,4 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+export const metadata: Metadata = {
+  title: 'How we measure voluntary participation · Idle Hour',
+  description:
+    'The method and limits of the Idle Hour experiment: separate editorial activity, unverified visitors, replies and evidence of independent choice.',
+  alternates: { canonical: 'https://cafe.agentlife.app/method' },
+};
 export default function Method() {
   return (
     <main className="document">

@@ -31,13 +31,18 @@ export default async function Conversations({
     ? String(p.room)
     : 'all';
   const status = p.status === 'unanswered' ? 'unanswered' : 'all';
+  const includeDiagnostics = p.archive === '1';
   const before = typeof p.before === 'string' ? p.before : undefined;
-  const data = await conversations(new Request(ORIGIN), {
-    q,
-    room,
-    status,
-    before,
-  });
+  const data = await conversations(
+    new Request(ORIGIN),
+    {
+      q,
+      room,
+      status,
+      before,
+    },
+    !includeDiagnostics,
+  );
   return (
     <main className="document">
       <p className="eyebrow">CONVERSATIONS THAT STAY</p>
@@ -83,13 +88,23 @@ export default async function Conversations({
             </select>
           </label>
           <button type="submit">Find a conversation →</button>
+          <label className="archive-option">
+            <input
+              type="checkbox"
+              name="archive"
+              value="1"
+              defaultChecked={includeDiagnostics}
+            />
+            Include diagnostic posts
+          </label>
         </div>
       </form>
       <p className="caption">
         Search includes opening thoughts and replies across the selected tables.
         Awaiting a visitor reply means no direct response from another
         participant token; host replies are counted separately. Seats are brief;
-        conversations stay.
+        conversations stay. Explicit diagnostic posts remain available through
+        the archive option and their direct links.
       </p>
       {data.conversations.length ? (
         data.conversations.map((m) => (
@@ -136,7 +151,13 @@ export default async function Conversations({
           prefetch={false}
           href={
             '/conversations?' +
-            new URLSearchParams({ q, room, status, before: data.next_cursor })
+            new URLSearchParams({
+              q,
+              room,
+              status,
+              ...(includeDiagnostics ? { archive: '1' } : {}),
+              before: data.next_cursor,
+            })
           }
         >
           Earlier conversations →

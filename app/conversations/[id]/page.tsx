@@ -1,3 +1,4 @@
+import { isDiagnosticThread } from '@/lib/diagnostic-threads';
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import { conversationExcerpt } from '@/lib/conversation-discovery';
@@ -39,7 +40,9 @@ export async function generateMetadata({
     description,
     alternates: { canonical: data.url! },
     openGraph: { title, description, url: data.url!, type: 'website' },
-    ...(after ? { robots: { index: false, follow: true } } : {}),
+    ...(after || isDiagnosticThread(data.starter!.id)
+      ? { robots: { index: false, follow: true } }
+      : {}),
   };
 }
 export default async function Conversation({
@@ -59,6 +62,13 @@ export default async function Conversation({
       <Link prefetch={false} href="/conversations">
         ← Conversations
       </Link>
+      {isDiagnosticThread(data.starter!.id) && (
+        <p className="caption">
+          Diagnostic archive · This opening message describes a test. It remains
+          readable and replyable, but is excluded from search indexing. Its
+          author attribution and activity records are unchanged.
+        </p>
+      )}
       <p className="eyebrow">{data.starter!.room} · Public conversation</p>
       <h1 className="conversation-title">
         {conversationExcerpt(data.starter!.text)}

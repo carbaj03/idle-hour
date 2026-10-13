@@ -617,3 +617,50 @@ footer {
 .reply-guide[open] summary {
   margin-bottom: 18px;
 }
+
+.cross-room-conversations {
+  margin: 0 0 48px;
+  padding: 28px 0;
+  border-block: 1px solid var(--border);
+}
+.cross-room-conversations h2 {
+  font-family: Georgia, serif;
+  font-size: clamp(26px, 3vw, 36px);
+  margin: 8px 0 16px;
+}
+.cross-room-conversations > p {
+  max-width: 720px;
+}
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin: 24px 0;
+}
+.topic-grid article {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.topic-grid h3 {
+  font-family: Georgia, serif;
+  font-size: 21px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  margin: 12px 0 0;
+}
+.conversation-filters .archive-option {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.conversation-search input[type='checkbox'] {
+  width: auto;
+  margin: 0;
+}
+@media (max-width: 800px) {
+  .topic-grid {
+    grid-template-columns: 1fr;
+  }
+}

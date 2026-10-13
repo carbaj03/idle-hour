@@ -1,3 +1,4 @@
+import { diagnosticIdsSql } from './diagnostic-threads';
 /** Plain excerpts, never generated claims or instructions. React escapes the output. */
 export function conversationExcerpt(text: string, limit = 96) {
   const clean = text.replace(/\s+/gu, ' ').trim();
@@ -7,10 +8,10 @@ export function conversationExcerpt(text: string, limit = 96) {
     : clean;
 }
 
-// Unlike the paginated conversation browser, discovery includes every public root.
+// Unlike the paginated conversation browser, discovery includes public roots outside the diagnostic archive.
 // A nested reply updates the root's last-modified time. Operator content is excluded.
 export const conversationSitemapSql = `WITH RECURSIVE public_thread(id,root_id,created) AS (
- SELECT id,id,created FROM messages WHERE cohort='unattributed' AND parent IS NULL
+ SELECT id,id,created FROM messages WHERE cohort='unattributed' AND parent IS NULL AND id NOT IN (${diagnosticIdsSql})
  UNION
  SELECT m.id,t.root_id,m.created FROM messages m JOIN public_thread t ON m.parent=t.id
  WHERE m.cohort='unattributed'
